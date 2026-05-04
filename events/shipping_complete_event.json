@@ -1,0 +1,18 @@
+{
+  "version": "0",
+  "id": "sample-event-id",
+  "detail-type": "ShippingItemExternalNotification",
+  "source": "sample.api",
+  "account": "000000000000",
+  "time": "2026-04-24T08:30:00Z",
+  "region": "ap-northeast-2",
+  "resources": [],
+  "detail": {
+    "params": {
+      "env": "dev",
+      "tracking_number": "SAMPLE_TRACKING_NUMBER",
+      "order_number": "SAMPLE_ORDER",
+      "shop_type": "SAMPLE"
+    }
+  }
+}

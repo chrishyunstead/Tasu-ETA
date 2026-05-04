@@ -1,0 +1,8 @@
+{
+  "user_id": 1234,
+  "route_s3": {
+    "bucket": "sample-route-result-bucket",
+    "key": "route-optimization/dt=2026-04-24/user_id=1234/request_id=sample.json"
+  },
+  "departure_time": "2026-04-24T17:22:00+09:00"
+}

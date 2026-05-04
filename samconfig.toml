@@ -1,0 +1,35 @@
+version = 0.1
+
+[beta.global.parameters]
+region = "ap-northeast-2"
+
+[beta.build.parameters]
+use_container = true
+parallel = true
+cached = true
+
+[beta.deploy.parameters]
+stack_name = "sam-tasu-eta-predict-beta"
+resolve_s3 = true
+resolve_image_repos = true
+profile = "beta"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "AccountEnv=\"beta\" EventBusName=\"beta-daas-events-pushops\" PushOpsSG=\"/PushOps/SG\" PushOpsPrivateSubnet3=\"/PushOps/PrivateSubnet3\" PushOpsPrivateSubnet4=\"/PushOps/PrivateSubnet4\" ModelS3Bucket=\"beta-daas-ml-data-auto-clustering-ap-northeast-2-391081828857\" ModelS3Prefix=\"tasu-predict\" RouteResultS3Bucket=\"beta-daas-ml-data-auto-clustering-ap-northeast-2-391081828857\" RouteResultApiUrl=\"https://kh4cadrbcungetdcvx4572dbja0yxojj.lambda-url.ap-northeast-2.on.aws//route-opti-S3API\" RouteResultApiHeaderName=\"\" RouteResultApiHeaderValue=\"\" OsrmBaseUrl=\"http://osrm.osrm.local:5000\" WeightClipMin=\"0.7\" WeightClipMax=\"1.3\" EtaDynamoTableName=\"delivery_eta_latest\" DefaultTasuMinutes=\"5.0\""
+
+[prod.global.parameters]
+region = "ap-northeast-2"
+
+[prod.build.parameters]
+use_container = true
+parallel = true
+cached = true
+
+[prod.deploy.parameters]
+stack_name = "sam-tasu-eta-predict-prod"
+resolve_s3 = true
+resolve_image_repos = true
+profile = "prod"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "AccountEnv=\"prod\" EventBusName=\"prod-daas-events-pushops\" PushOpsSG=\"/PushOps/SG\" PushOpsPrivateSubnet3=\"/PushOps/PrivateSubnet3\" PushOpsPrivateSubnet4=\"/PushOps/PrivateSubnet4\" ModelS3Bucket=\"prod-daas-ml-data-auto-clustering-ap-northeast-2-910312087826\" ModelS3Prefix=\"tasu-predict\" RouteResultS3Bucket=\"prod-daas-ml-data-auto-clustering-ap-northeast-2-910312087826\" RouteResultApiUrl=\"https://gq62q6scgfhqrtvafm4ubtweeq0bvall.lambda-url.ap-northeast-2.on.aws//route-opti-S3API\" RouteResultApiHeaderName=\"\" RouteResultApiHeaderValue=\"\" OsrmBaseUrl=\"http://osrm.osrm.local:5000\" WeightClipMin=\"0.7\" WeightClipMax=\"1.3\" EtaDynamoTableName=\"delivery_eta_latest\" DefaultTasuMinutes=\"5.0\""

@@ -1,0 +1,224 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  Delivery ETA Calculate and Query Lambdas - sanitized portfolio version
+
+Globals:
+  Function:
+    Timeout: 120
+    MemorySize: 2048
+    Tracing: Active
+
+Parameters:
+  AccountEnv:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - prod
+
+  EventBusName:
+    Type: String
+    Default: sample-event-bus
+
+  LambdaSecurityGroupId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::SecurityGroup::Id>
+    Default: /Sample/VPC/LambdaSecurityGroupId
+
+  LambdaPrivateSubnetA:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Subnet::Id>
+    Default: /Sample/VPC/PrivateSubnetA
+
+  LambdaPrivateSubnetB:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Subnet::Id>
+    Default: /Sample/VPC/PrivateSubnetB
+
+  ModelS3Bucket:
+    Type: String
+    Default: sample-model-bucket
+
+  ModelS3Prefix:
+    Type: String
+    Default: tasu-predict
+
+  RouteResultApiUrl:
+    Type: String
+    Default: ""
+
+  RouteResultApiHeaderName:
+    Type: String
+    Default: ""
+
+  RouteResultApiHeaderValue:
+    Type: String
+    NoEcho: true
+    Default: ""
+    
+  RouteResultS3Bucket:
+    Type: String
+    Default: sample-route-result-bucket
+
+  OsrmBaseUrl:
+    Type: String
+    Default: http://your-osrm-endpoint:5000
+
+  WeightClipMin:
+    Type: String
+    Default: "0.7"
+
+  WeightClipMax:
+    Type: String
+    Default: "1.3"
+
+  EtaDynamoTableName:
+    Type: String
+    Default: delivery_eta_latest
+
+  DefaultTasuMinutes:
+    Type: String
+    Default: "5.0"
+
+Resources:
+  TasuEtaCalculateFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      DockerTag: tasu-eta-calculate-v1.0
+      DockerContext: ./
+      Dockerfile: Dockerfile
+    Properties:
+      PackageType: Image
+      FunctionName: !Sub "${AWS::StackName}-calculate-lambda"
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - AWSLambdaVPCAccessExecutionRole
+        - S3ReadPolicy:
+            BucketName: !Ref ModelS3Bucket
+        - S3ReadPolicy:
+            BucketName: !Ref RouteResultS3Bucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref EtaDynamoTableName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/Sample/*"
+      Environment:
+        Variables:
+          ACCOUNT_ENV: !Ref AccountEnv
+          MODEL_S3_BUCKET: !Ref ModelS3Bucket
+          MODEL_S3_PREFIX: !Ref ModelS3Prefix
+          ROUTE_RESULT_API_URL: !Ref RouteResultApiUrl
+          ROUTE_RESULT_API_HEADER_NAME: !Ref RouteResultApiHeaderName
+          ROUTE_RESULT_API_HEADER_VALUE: !Ref RouteResultApiHeaderValue
+          ROUTE_RESULT_API_TIMEOUT_SECONDS: 15
+          OSRM_BASE_URL: !Ref OsrmBaseUrl
+          OSRM_TIMEOUT_SECONDS: 10
+          WEIGHT_CLIP_MIN: !Ref WeightClipMin
+          WEIGHT_CLIP_MAX: !Ref WeightClipMax
+          DYNAMODB_TABLE_NAME: !Ref EtaDynamoTableName
+          DEFAULT_TASU_MINUTES: !Ref DefaultTasuMinutes
+          TZ: Asia/Seoul
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroupId
+        SubnetIds:
+          - !Ref LambdaPrivateSubnetA
+          - !Ref LambdaPrivateSubnetB
+      Events:
+        ShippingCompleteEventRule:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+            Pattern:
+              source:
+                - prefix: sample.api
+              detail-type:
+                - ShippingItemExternalNotification
+              detail:
+                params:
+                  env:
+                    - !Ref AccountEnv
+
+  TasuEtaQueryFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      DockerTag: tasu-eta-query-v1.0
+      DockerContext: ./
+      Dockerfile: Dockerfile
+    Properties:
+      PackageType: Image
+      FunctionName: !Sub "${AWS::StackName}-query-lambda"
+      ImageConfig:
+        Command:
+          - query_eta_app.lambda_handler
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - DynamoDBReadPolicy:
+            TableName: !Ref EtaDynamoTableName
+      Environment:
+        Variables:
+          ACCOUNT_ENV: !Ref AccountEnv
+          DYNAMODB_TABLE_NAME: !Ref EtaDynamoTableName
+          TZ: Asia/Seoul
+
+  TasuEtaCalculateFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !GetAtt TasuEtaCalculateFunction.Arn
+      AuthType: NONE
+      Cors:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - "POST"
+        AllowHeaders:
+          - "*"
+
+  TasuEtaCalculateFunctionUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunctionUrl
+      FunctionName: !Ref TasuEtaCalculateFunction
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+  TasuEtaQueryFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !GetAtt TasuEtaQueryFunction.Arn
+      AuthType: NONE
+      Cors:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - "GET"
+        AllowHeaders:
+          - "*"
+
+  TasuEtaQueryFunctionUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunctionUrl
+      FunctionName: !Ref TasuEtaQueryFunction
+      Principal: "*"
+      FunctionUrlAuthType: NONE
+
+Outputs:
+  TasuEtaCalculateFunctionUrl:
+    Description: "POST Function URL for ETA calculation and DynamoDB upsert"
+    Value: !GetAtt TasuEtaCalculateFunctionUrl.FunctionUrl
+
+  TasuEtaQueryFunctionUrl:
+    Description: "GET Function URL for ETA query from DynamoDB"
+    Value: !GetAtt TasuEtaQueryFunctionUrl.FunctionUrl
+
+  TasuEtaCalculateFunctionName:
+    Description: "ETA calculation Lambda function name"
+    Value: !Ref TasuEtaCalculateFunction
+
+  TasuEtaQueryFunctionName:
+    Description: "ETA query Lambda function name"
+    Value: !Ref TasuEtaQueryFunction
