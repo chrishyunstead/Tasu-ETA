@@ -12,7 +12,7 @@ cached = true
 stack_name = "sam-delivery-eta-dev"
 resolve_s3 = true
 resolve_image_repos = true
-profile = "your-aws-profile"
+profile = "<AWS_PROFILE>"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "AccountEnv=\"dev\" EventBusName=\"sample-event-bus\" LambdaSecurityGroupId=\"/Sample/VPC/LambdaSecurityGroupId\" LambdaPrivateSubnetA=\"/Sample/VPC/PrivateSubnetA\" LambdaPrivateSubnetB=\"/Sample/VPC/PrivateSubnetB\" ModelS3Bucket=\"sample-model-bucket\" ModelS3Prefix=\"tasu-predict\" RouteResultS3Bucket=\"sample-route-result-bucket\" RouteResultApiUrl=\"https://example.lambda-url.ap-northeast-2.on.aws/route-results\" RouteResultApiHeaderName=\"\" RouteResultApiHeaderValue=\"\" OsrmBaseUrl=\"http://your-osrm-endpoint:5000\" WeightClipMin=\"0.7\" WeightClipMax=\"1.3\" EtaDynamoTableName=\"delivery_eta_latest\" DefaultTasuMinutes=\"5.0\""
+parameter_overrides = "AccountEnv=\"dev\" EventBusName=\"<EVENT_BUS_NAME>\" LambdaSecurityGroupId=\"<SSM_PARAM_LAMBDA_SECURITY_GROUP_ID>\" LambdaPrivateSubnetA=\"<SSM_PARAM_PRIVATE_SUBNET_A>\" LambdaPrivateSubnetB=\"<SSM_PARAM_PRIVATE_SUBNET_B>\" ModelS3Bucket=\"<MODEL_S3_BUCKET>\" ModelS3Prefix=\"tasu-predict\" RouteResultS3Bucket=\"<ROUTE_RESULT_S3_BUCKET>\" RouteResultApiUrl=\"https://example.lambda-url.<REGION>.on.aws/route-results\" RouteResultApiHeaderName=\"\" RouteResultApiHeaderValue=\"\" OsrmBaseUrl=\"http://<OSRM_ENDPOINT>:5000\" WeightClipMin=\"0.7\" WeightClipMax=\"1.3\" EtaDynamoTableName=\"delivery_eta_latest\" DefaultTasuMinutes=\"5.0\""
